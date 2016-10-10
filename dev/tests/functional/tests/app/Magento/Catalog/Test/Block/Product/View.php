@@ -173,7 +173,7 @@ class View extends AbstractConfigureBlock
      *
      * @var string
      */
-    protected $fullImage = '[data-gallery-role="gallery"] img.fotorama__img.fotorama__img--full';
+    protected $fullImage = '[data-gallery-role="gallery"] img.fotorama__img--full';
 
     /**
      * Full image close selector
@@ -190,6 +190,11 @@ class View extends AbstractConfigureBlock
     protected $baseImage = '[data-gallery-role="gallery"] img.fotorama__img.fotorama__img';
 
     /**
+     * @var string
+     */
+    protected $galleryLoader = '.fotorama__spinner--show';
+
+    /**
      * Video Container selector
      *
      * @var string
@@ -204,7 +209,7 @@ class View extends AbstractConfigureBlock
     public function getPriceBlock()
     {
         return $this->blockFactory->create(
-            'Magento\Catalog\Test\Block\Product\Price',
+            \Magento\Catalog\Test\Block\Product\Price::class,
             ['element' => $this->_rootElement->find($this->priceBlock, Locator::SELECTOR_XPATH)]
         );
     }
@@ -219,7 +224,7 @@ class View extends AbstractConfigureBlock
     {
         /** @var \Magento\Checkout\Test\Block\Cart\Sidebar $miniCart */
         $miniCart = $this->blockFactory->create(
-            '\Magento\Checkout\Test\Block\Cart\Sidebar',
+            \Magento\Checkout\Test\Block\Cart\Sidebar::class,
             ['element' => $this->browser->find($this->miniCartBlock)]
         );
         /** @var CatalogProductSimple $product */
@@ -302,19 +307,21 @@ class View extends AbstractConfigureBlock
 
     /**
      * Press 'Check out with Braintree PayPal' button.
-     *
-     * @return void
+     * 
+     * @return string
      */
     public function braintreePaypalCheckout()
     {
+        $currentWindow = $this->browser->getCurrentWindow();
         /** @var \Magento\Checkout\Test\Block\Cart\Sidebar $miniCart */
         $miniCart = $this->blockFactory->create(
-            '\Magento\Checkout\Test\Block\Cart\Sidebar',
+            \Magento\Checkout\Test\Block\Cart\Sidebar::class,
             ['element' => $this->browser->find($this->miniCartBlock)]
         );
 
         $miniCart->openMiniCart();
         $miniCart->clickBraintreePaypalButton();
+        return $currentWindow;
     }
 
     /**
@@ -435,7 +442,7 @@ class View extends AbstractConfigureBlock
     {
         /** @var \Magento\Backend\Test\Block\Messages $messageBlock */
         $messageBlock = $this->blockFactory->create(
-            'Magento\Backend\Test\Block\Messages',
+            \Magento\Backend\Test\Block\Messages::class,
             ['element' => $this->browser->find($this->messageBlock)]
         );
         $this->_rootElement->find($this->clickAddToCompare, Locator::SELECTOR_CSS)->click();
@@ -497,6 +504,7 @@ class View extends AbstractConfigureBlock
      */
     public function isGalleryVisible()
     {
+        $this->waitForElementNotVisible($this->galleryLoader);
         return $this->_rootElement->find($this->mediaGallery)->isVisible();
     }
 
@@ -507,6 +515,7 @@ class View extends AbstractConfigureBlock
      */
     public function isFullImageVisible()
     {
+        $this->waitForElementNotVisible($this->galleryLoader);
         return $this->browser->find($this->fullImage)->isVisible();
     }
 
@@ -558,7 +567,19 @@ class View extends AbstractConfigureBlock
      */
     public function closeFullImage()
     {
-        $this->browser->find($this->fullImageClose, Locator::SELECTOR_CSS)->click();
+        $this->_rootElement->waitUntil(
+            function () {
+                $this->browser->find($this->fullImage)->hover();
+
+                if ($this->browser->find($this->fullImageClose)->isVisible()) {
+                    $this->browser->find($this->fullImageClose)->click();
+
+                    return true;
+                }
+
+                return null;
+            }
+        );
     }
 
     /**

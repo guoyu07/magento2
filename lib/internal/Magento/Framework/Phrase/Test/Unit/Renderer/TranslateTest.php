@@ -24,13 +24,13 @@ class TranslateTest extends \PHPUnit_Framework_TestCase
 
     protected function setUp()
     {
-        $this->_translator = $this->getMock('Magento\Framework\TranslateInterface', [], [], '', false);
-        $this->loggerMock = $this->getMockBuilder('Psr\Log\LoggerInterface')
+        $this->_translator = $this->getMock(\Magento\Framework\TranslateInterface::class, [], [], '', false);
+        $this->loggerMock = $this->getMockBuilder(\Psr\Log\LoggerInterface::class)
             ->getMock();
 
         $objectManagerHelper = new \Magento\Framework\TestFramework\Unit\Helper\ObjectManager($this);
         $this->_renderer = $objectManagerHelper->getObject(
-            'Magento\Framework\Phrase\Renderer\Translate',
+            \Magento\Framework\Phrase\Renderer\Translate::class,
             [
                 'translator' => $this->_translator,
                 'logger' => $this->loggerMock
@@ -58,6 +58,15 @@ class TranslateTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue([$translatedTextInDictionary => $translate]));
 
         $this->assertEquals($translate, $this->_renderer->render([$translatedTextInput], []));
+    }
+
+    public function testRenderWithoutTranslation()
+    {
+        $translate = "Text with quote \'";
+        $this->_translator->expects($this->once())
+            ->method('getData')
+            ->will($this->returnValue([]));
+        $this->assertEquals($translate, $this->_renderer->render([$translate], []));
     }
 
     public function testRenderTextWithDoubleQuotes()

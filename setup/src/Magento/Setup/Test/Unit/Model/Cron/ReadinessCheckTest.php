@@ -50,10 +50,15 @@ class ReadinessCheckTest extends \PHPUnit_Framework_TestCase
      */
     private $expected;
 
+    /**
+     * @var \PHPUnit_Framework_MockObject_MockObject|\Magento\Setup\Model\Cron\Status
+     */
+    private $status;
+
     public function setUp()
     {
-        $this->dbValidator = $this->getMock('Magento\Setup\Validator\DbValidator', [], [], '', false);
-        $this->deploymentConfig = $this->getMock('Magento\Framework\App\DeploymentConfig', [], [], '', false);
+        $this->dbValidator = $this->getMock(\Magento\Setup\Validator\DbValidator::class, [], [], '', false);
+        $this->deploymentConfig = $this->getMock(\Magento\Framework\App\DeploymentConfig::class, [], [], '', false);
         $this->deploymentConfig->expects($this->once())
             ->method('get')
             ->willReturn(
@@ -64,28 +69,37 @@ class ReadinessCheckTest extends \PHPUnit_Framework_TestCase
                     ConfigOptionsListConstants::KEY_PASSWORD => 'password'
                 ]
             );
-        $this->filesystem = $this->getMock('Magento\Framework\Filesystem', [], [], '', false);
-        $this->write = $this->getMock('Magento\Framework\Filesystem\Directory\Write', [], [], '', false);
+        $this->filesystem = $this->getMock(\Magento\Framework\Filesystem::class, [], [], '', false);
+        $this->write = $this->getMock(\Magento\Framework\Filesystem\Directory\Write::class, [], [], '', false);
         $this->filesystem->expects($this->once())->method('getDirectoryWrite')->willReturn($this->write);
-        $this->phpReadinessCheck = $this->getMock('Magento\Setup\Model\PhpReadinessCheck', [], [], '', false);
-        $this->basePackageInfo = $this->getMock('Magento\Setup\Model\BasePackageInfo', [], [], '', false);
+        $this->phpReadinessCheck = $this->getMock(\Magento\Setup\Model\PhpReadinessCheck::class, [], [], '', false);
+        $this->basePackageInfo = $this->getMock(\Magento\Setup\Model\BasePackageInfo::class, [], [], '', false);
         $this->basePackageInfo->expects($this->once())->method('getPaths')->willReturn([__FILE__]);
+        $this->status = $this->getMock(\Magento\Setup\Model\Cron\Status::class, [], [], '', false);
         $this->readinessCheck = new ReadinessCheck(
             $this->dbValidator,
             $this->deploymentConfig,
             $this->filesystem,
             $this->phpReadinessCheck,
-            $this->basePackageInfo
+            $this->basePackageInfo,
+            $this->status
         );
-        $this->phpReadinessCheck->expects($this->once())->method('checkPhpVersion')->willReturn(['success' => true]);
-        $this->phpReadinessCheck->expects($this->once())->method('checkPhpExtensions')->willReturn(['success' => true]);
-        $this->phpReadinessCheck->expects($this->once())
+        $this->phpReadinessCheck
+            ->expects($this->once())
+            ->method('checkPhpVersion')
+            ->willReturn(['responseType' => 'success']);
+        $this->phpReadinessCheck
+            ->expects($this->once())
+            ->method('checkPhpExtensions')
+            ->willReturn(['responseType' => 'success']);
+        $this->phpReadinessCheck
+            ->expects($this->once())
             ->method('checkPhpCronSettings')
-            ->willReturn(['success' => true]);
+            ->willReturn(['responseType' => 'success']);
         $this->expected = [
-            ReadinessCheck::KEY_PHP_VERSION_VERIFIED => ['success' => true],
-            ReadinessCheck::KEY_PHP_EXTENSIONS_VERIFIED => ['success' => true],
-            ReadinessCheck::KEY_PHP_SETTINGS_VERIFIED => ['success' => true],
+            ReadinessCheck::KEY_PHP_VERSION_VERIFIED => ['responseType' => 'success'],
+            ReadinessCheck::KEY_PHP_EXTENSIONS_VERIFIED => ['responseType' => 'success'],
+            ReadinessCheck::KEY_PHP_SETTINGS_VERIFIED => ['responseType' => 'success']
         ];
     }
 

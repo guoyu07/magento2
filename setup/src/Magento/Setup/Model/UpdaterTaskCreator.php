@@ -4,7 +4,6 @@
  * See COPYING.txt for license details.
  */
 
-
 namespace Magento\Setup\Model;
 
 use Magento\Framework\App\Filesystem\DirectoryList;
@@ -43,26 +42,26 @@ class UpdaterTaskCreator
     private $updater;
 
     /**
-     * @var \Magento\Framework\App\Cache\Manager
+     * @var \Magento\Setup\Model\ObjectManagerProvider
      */
-    private $cacheManager;
+    private $objectManagerProvider;
 
     /**
      * @param \Magento\Framework\Filesystem $filesystem
      * @param \Magento\Setup\Model\Navigation $navigation
      * @param \Magento\Setup\Model\Updater $updater
-     * @param \Magento\Framework\App\Cache\Manager $cacheManager
+     * @param \Magento\Setup\Model\ObjectManagerProvider $objectManagerProvider
      */
     public function __construct(
         \Magento\Framework\Filesystem $filesystem,
         \Magento\Setup\Model\Navigation $navigation,
         \Magento\Setup\Model\Updater $updater,
-        \Magento\Framework\App\Cache\Manager $cacheManager
+        \Magento\Setup\Model\ObjectManagerProvider $objectManagerProvider
     ) {
         $this->filesystem = $filesystem;
         $this->navigation = $navigation;
         $this->updater = $updater;
-        $this->cacheManager = $cacheManager;
+        $this->objectManagerProvider = $objectManagerProvider;
     }
 
     /**
@@ -109,11 +108,14 @@ class UpdaterTaskCreator
 
         $errorMessage .= $this->updater->createUpdaterTask(
             [],
-            \Magento\Setup\Model\Updater::TASK_TYPE_MAINTENANCE_MODE,
-            ['enable' => true]
+            \Magento\Setup\Model\Cron\JobFactory::JOB_MAINTENANCE_MODE_ENABLE
         );
 
-        $cacheStatus = $this->cacheManager->getStatus();
+        /**
+         * @var \Magento\Framework\App\Cache\Manager $cacheManager
+         */
+        $cacheManager = $this->objectManagerProvider->get()->get(\Magento\Framework\App\Cache\Manager::class);
+        $cacheStatus = $cacheManager->getStatus();
 
         $errorMessage .= $this->updater->createUpdaterTask(
             [],
@@ -135,26 +137,30 @@ class UpdaterTaskCreator
                 \Magento\Setup\Model\Cron\JobFactory::JOB_UPGRADE,
                 []
             );
-        } elseif ($jobType == 'disable') {
-            $errorMessage .= $this->updater->createUpdaterTask(
-                [],
-                \Magento\Setup\Model\Updater::TASK_TYPE_MAINTENANCE_MODE,
-                ['enable' => false]
-            );
         }
 
         $enabledCaches = [];
         foreach ($cacheStatus as $cacheName => $value) {
-            if ($value) {
+            if ($value === 1) {
                 $enabledCaches[] = $cacheName;
             }
         }
 
-        $errorMessage .= $this->updater->createUpdaterTask(
-            [],
-            \Magento\Setup\Model\Cron\JobFactory::JOB_ENABLE_CACHE,
-            [implode(' ', $enabledCaches)]
-        );
+        if (!empty($enabledCaches)) {
+            $errorMessage .= $this->updater->createUpdaterTask(
+                [],
+                \Magento\Setup\Model\Cron\JobFactory::JOB_ENABLE_CACHE,
+                [implode(' ', $enabledCaches)]
+            );
+        }
+
+        if ($jobType == 'disable') {
+            $errorMessage .= $this->updater->createUpdaterTask(
+                [],
+                \Magento\Setup\Model\Cron\JobFactory::JOB_MAINTENANCE_MODE_DISABLE
+            );
+
+        }
 
         return $errorMessage;
     }
@@ -164,7 +170,7 @@ class UpdaterTaskCreator
      *
      * @param string $jobType
      * @param array $postPayload
-     * @param array $addtionalOptions
+     * @param array $additionalOptions
      * @param string $cronTaskType
      * @return void
      */

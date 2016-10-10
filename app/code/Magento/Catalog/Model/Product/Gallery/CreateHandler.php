@@ -76,7 +76,7 @@ class CreateHandler implements ExtensionInterface
         \Magento\Framework\Filesystem $filesystem,
         \Magento\MediaStorage\Helper\File\Storage\Database $fileStorageDb
     ) {
-        $this->metadata = $metadataPool->getMetadata('Magento\Catalog\Api\Data\ProductInterface');
+        $this->metadata = $metadataPool->getMetadata(\Magento\Catalog\Api\Data\ProductInterface::class);
         $this->attributeRepository = $attributeRepository;
         $this->resourceModel = $resourceModel;
         $this->jsonHelper = $jsonHelper;
@@ -160,12 +160,13 @@ class CreateHandler implements ExtensionInterface
             if (in_array($attrData, array_keys($existImages))) {
                 $product->setData($mediaAttrCode . '_label', $existImages[$attrData]['label']);
             }
-
-            $product->addAttributeUpdate(
-                $mediaAttrCode,
-                $product->getData($mediaAttrCode),
-                $product->getStoreId()
-            );
+            if (!empty($product->getData($mediaAttrCode))) {
+                $product->addAttributeUpdate(
+                    $mediaAttrCode,
+                    $product->getData($mediaAttrCode),
+                    $product->getStoreId()
+                );
+            }
         }
 
         $product->setData($attrCode, $value);

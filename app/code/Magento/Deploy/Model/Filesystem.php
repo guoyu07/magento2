@@ -138,10 +138,11 @@ class Filesystem
                 DirectoryList::TMP_MATERIALIZATION_DIR
             ]
         );
-        // Trigger static assets compilation and deployment
-        $this->deployStaticContent($output);
+        
         // Trigger code generation
         $this->compile($output);
+        // Trigger static assets compilation and deployment
+        $this->deployStaticContent($output);
     }
 
     /**
@@ -155,7 +156,7 @@ class Filesystem
         OutputInterface $output
     ) {
         $output->writeln('Starting deployment of static content');
-        $cmd = $this->functionCallPath . 'setup:static-content:deploy '
+        $cmd = $this->functionCallPath . 'setup:static-content:deploy -f '
             . implode(' ', $this->getUsedLocales());
 
         /**

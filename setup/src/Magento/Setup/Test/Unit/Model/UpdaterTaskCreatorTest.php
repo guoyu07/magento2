@@ -6,7 +6,7 @@
 
 namespace Magento\Setup\Test\Unit\Model;
 
-use \Magento\Framework\App\Cache\Manager;
+use \Magento\Setup\Model\ObjectManagerProvider;
 use \Magento\Setup\Model\UpdaterTaskCreator;
 
 class UpdaterTaskCreatorTest extends \PHPUnit_Framework_TestCase
@@ -27,21 +27,22 @@ class UpdaterTaskCreatorTest extends \PHPUnit_Framework_TestCase
     private $navigation;
 
     /**
-     * @var Manager|\PHPUnit_Framework_MockObject_MockObject
+     * @var ObjectManagerProvider|\PHPUnit_Framework_MockObject_MockObject
      */
-    private $cacheManager;
+    private $objectManagerProvider;
 
     public function setUp()
     {
-        $this->updater = $this->getMock('Magento\Setup\Model\Updater', [], [], '', false);
-        $this->cacheManager = $this->getMock('\Magento\Framework\App\Cache\Manager', [], [], '', false);
-        $this->filesystem = $this->getMock('Magento\Framework\Filesystem', [], [], '', false);
-        $this->navigation = $this->getMock('Magento\Setup\Model\Navigation', [], [], '', false);
+        $this->updater = $this->getMock(\Magento\Setup\Model\Updater::class, [], [], '', false);
+        $this->objectManagerProvider =
+            $this->getMock(\Magento\Setup\Model\ObjectManagerProvider::class, [], [], '', false);
+        $this->filesystem = $this->getMock(\Magento\Framework\Filesystem::class, [], [], '', false);
+        $this->navigation = $this->getMock(\Magento\Setup\Model\Navigation::class, [], [], '', false);
         $this->model = new UpdaterTaskCreator(
             $this->filesystem,
             $this->navigation,
             $this->updater,
-            $this->cacheManager
+            $this->objectManagerProvider
         );
         $this->navigation->expects($this->any())
             ->method('getMenuItems')
@@ -59,10 +60,20 @@ class UpdaterTaskCreatorTest extends \PHPUnit_Framework_TestCase
      */
     public function testCreateUpdaterTasks($payload)
     {
-        $write = $this->getMockForAbstractClass('Magento\Framework\Filesystem\Directory\WriteInterface', [], '', false);
+        $write = $this->getMockForAbstractClass(
+            \Magento\Framework\Filesystem\Directory\WriteInterface::class,
+            [],
+            '',
+            false
+        );
         $this->filesystem->expects($this->once())->method('getDirectoryWrite')->willReturn($write);
         $write->expects($this->once())->method('writeFile');
-        $this->cacheManager->expects($this->once())->method('getStatus')->willReturn([
+        $cacheManager = $this->getMock(\Magento\Framework\App\Cache\Manager::class, [], [], '', false);
+        $objectManager = $this->getMockForAbstractClass(\Magento\Framework\ObjectManagerInterface::class);
+        $objectManager->expects($this->once())->method('get')->willReturn($cacheManager);
+        $this->objectManagerProvider->expects($this->once())->method('get')->willReturn($objectManager);
+
+        $cacheManager->expects($this->once())->method('getStatus')->willReturn([
             'cache1' => 1, 'cache2' => 0, 'cache3' => 1
         ]);
         $this->model->createUpdaterTasks($payload);

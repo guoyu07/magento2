@@ -233,9 +233,7 @@ class Import extends \Magento\ImportExport\Model\AbstractModel
                 ) {
                     throw new \Magento\Framework\Exception\LocalizedException(
                         __(
-                            'The entity adapter object must be an instance of %1 or %2.',
-                            'Magento\ImportExport\Model\Import\Entity\AbstractEntity',
-                            'Magento\ImportExport\Model\Import\AbstractEntity'
+                            'The entity adapter object must be an instance of %1 or %2.', \Magento\ImportExport\Model\Import\Entity\AbstractEntity::class, \Magento\ImportExport\Model\Import\AbstractEntity::class
                         )
                     );
                 }
@@ -607,7 +605,10 @@ class Import extends \Magento\ImportExport\Model\AbstractModel
         foreach (array_keys($relatedIndexers) as $indexerId) {
             try {
                 $indexer = $this->indexerRegistry->get($indexerId);
-                $indexer->invalidate();
+
+                if (!$indexer->isScheduled()) {
+                    $indexer->invalidate();
+                }
             } catch (\InvalidArgumentException $e) {
             }
         }

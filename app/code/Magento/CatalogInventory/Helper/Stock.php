@@ -154,7 +154,10 @@ class Stock
                 \Magento\Store\Model\ScopeInterface::SCOPE_STORE
             );
             $resource = $this->getStockStatusResource();
-            $resource->addStockDataToCollection($collection, !$isShowOutOfStock);
+            $resource->addStockDataToCollection(
+                $collection,
+                !$isShowOutOfStock && $collection->getFlag('require_stock_items')
+            );
             $collection->setFlag($stockFlag, true);
         }
     }
@@ -179,7 +182,7 @@ class Stock
     {
         if ($this->stockConfiguration === null) {
             $this->stockConfiguration = \Magento\Framework\App\ObjectManager::getInstance()
-                ->get('Magento\CatalogInventory\Api\StockConfigurationInterface');
+                ->get(\Magento\CatalogInventory\Api\StockConfigurationInterface::class);
         }
         return $this->stockConfiguration;
     }

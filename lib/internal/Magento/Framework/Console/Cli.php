@@ -32,8 +32,12 @@ class Cli extends SymfonyApplication
     const INPUT_KEY_BOOTSTRAP = 'bootstrap';
 
     /**
-     * @var \Zend\ServiceManager\ServiceManager
+     * Cli exit codes
      */
+    const RETURN_SUCCESS = 0;
+    const RETURN_FAILURE = 1;
+
+    /** @var \Zend\ServiceManager\ServiceManager */
     private $serviceManager;
 
     /**
@@ -123,15 +127,15 @@ class Cli extends SymfonyApplication
             $bootstrap = Bootstrap::create(BP, $params);
             $objectManager = $bootstrap->getObjectManager();
             /** @var \Magento\Setup\Model\ObjectManagerProvider $omProvider */
-            $omProvider = $this->serviceManager->get('Magento\Setup\Model\ObjectManagerProvider');
+            $omProvider = $this->serviceManager->get(\Magento\Setup\Model\ObjectManagerProvider::class);
             $omProvider->setObjectManager($objectManager);
 
-            if (class_exists('Magento\Setup\Console\CommandList')) {
+            if (class_exists(\Magento\Setup\Console\CommandList::class)) {
                 $setupCommandList = new \Magento\Setup\Console\CommandList($this->serviceManager);
                 $commands = array_merge($commands, $setupCommandList->getCommands());
             }
 
-            if ($objectManager->get('Magento\Framework\App\DeploymentConfig')->isAvailable()) {
+            if ($objectManager->get(\Magento\Framework\App\DeploymentConfig::class)->isAvailable()) {
                 /** @var \Magento\Framework\Console\CommandListInterface */
                 $commandList = $objectManager->create(\Magento\Framework\Console\CommandListInterface::class);
                 $commands = array_merge($commands, $commandList->getCommands());

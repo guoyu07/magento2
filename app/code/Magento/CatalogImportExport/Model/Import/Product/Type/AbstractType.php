@@ -548,7 +548,7 @@ abstract class AbstractType
     {
         if (!$this->metadataPool) {
             $this->metadataPool = \Magento\Framework\App\ObjectManager::getInstance()
-                ->get('Magento\Framework\EntityManager\MetadataPool');
+                ->get(\Magento\Framework\EntityManager\MetadataPool::class);
         }
         return $this->metadataPool;
     }
@@ -566,5 +566,14 @@ abstract class AbstractType
                 ->getLinkField();
         }
         return $this->productEntityLinkField;
+    }
+
+    /**
+     * Clean cached values
+     */
+    public function __destruct()
+    {
+        self::$attributeCodeToId = [];
+        self::$commonAttributesCache = [];
     }
 }
